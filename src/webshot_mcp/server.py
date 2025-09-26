@@ -328,6 +328,54 @@ async def _add_stealth_script(context):
         await context.add_init_script(path=str(stealth_js_path))
         logger.info("已加载 stealth.js 反爬脚本")
 
+async def _create_browser(p):
+    """创建浏览器实例，优先使用系统浏览器"""
+    
+    # 浏览器启动参数
+    browser_args = [
+        '--no-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor'
+    ]
+    
+    # 尝试使用系统 Chrome
+    try:
+        browser = await p.chromium.launch(
+            channel="chrome",
+            headless=True,
+            args=browser_args
+        )
+        logger.info("✅ 使用系统 Chrome 浏览器")
+        return browser, "Chrome"
+    except Exception as e:
+        logger.debug(f"无法使用系统 Chrome: {e}")
+    
+    # 尝试使用系统 Edge
+    try:
+        browser = await p.chromium.launch(
+            channel="msedge",
+            headless=True,
+            args=browser_args
+        )
+        logger.info("✅ 使用系统 Microsoft Edge 浏览器")
+        return browser, "Edge"
+    except Exception as e:
+        logger.debug(f"无法使用系统 Edge: {e}")
+    
+    # 兜底：使用默认 Chromium
+    try:
+        browser = await p.chromium.launch(
+            headless=True,
+            args=browser_args
+        )
+        logger.info("📦 使用 Playwright Chromium 浏览器")
+        return browser, "Chromium"
+    except Exception as e:
+        logger.error(f"无法启动任何浏览器: {e}")
+        raise
+
 # 设备映射到 Playwright 内置设备
 DEVICE_MAPPING = {
     "desktop": None,  # 使用自定义 viewport
@@ -462,17 +510,8 @@ async def _take_screenshot_attempt(
     """单次截图尝试"""
     
     async with async_playwright() as p:
-        # 启动浏览器，添加更好的启动参数
-        browser = await p.chromium.launch(
-            headless=True,
-            args=[
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--disable-web-security',
-                '--disable-features=VizDisplayCompositor'
-            ]
-        )
+        # 启动浏览器，优先使用系统浏览器
+        browser, browser_type = await _create_browser(p)
         
         try:
             # 创建页面或上下文
