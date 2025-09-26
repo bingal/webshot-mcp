@@ -121,71 +121,51 @@ The `webshot` tool supports the following parameters:
 
 ### Usage Examples
 
-#### Basic Screenshot
+#### Full-page Screenshot (Long Screenshot) Prompt Reference
 
-```json
-{
-  "name": "webshot",
-  "arguments": {
-    "url": "https://example.com",
-    "output": "/tmp/screenshot.png"
-  }
-}
+```
+Please generate a full-page screenshot of www.baidu.com, save it as WebP format to /Users/ben/Downloads/screenshot-baidu-1.webp
 ```
 
-#### Full-page Screenshot
+#### Custom Size Screenshot Prompt Reference
 
-```json
-{
-  "name": "webshot", 
-  "arguments": {
-    "url": "https://example.com",
-    "output": "/tmp/fullpage.png",
-    "height": 0
-  }
-}
+```
+Please generate a screenshot of www.baidu.com with dimensions 1280x720, save it as WebP format to /Users/ben/Downloads/screenshot-baidu-2.webp
 ```
 
-#### Mobile Device Screenshot
+#### Mobile Device Screenshot Prompt Reference
 
-```json
-{
-  "name": "webshot",
-  "arguments": {
-    "url": "https://example.com",
-    "output": "/tmp/mobile.png",
-    "device": "mobile"
-  }
-}
+*Note: Mobile and tablet devices will use their actual device dimensions, ignoring custom size parameters*
+
+```
+Please generate a mobile screenshot of www.baidu.com, save it as WebP format to /Users/ben/Downloads/screenshot-mobile.webp
 ```
 
-#### High-quality JPEG Screenshot
+#### Tablet Device Screenshot Prompt Reference
 
-```json
-{
-  "name": "webshot",
-  "arguments": {
-    "url": "https://example.com", 
-    "output": "/tmp/screenshot.jpg",
-    "format": "jpeg",
-    "quality": 90
-  }
-}
+```
+Please generate a tablet screenshot of www.baidu.com, save it as PNG format to /Users/ben/Downloads/screenshot-tablet.png
 ```
 
-#### Custom Size Screenshot
+#### Custom Format and Quality Prompt Reference
 
-```json
-{
-  "name": "webshot",
-  "arguments": {
-    "url": "https://example.com",
-    "output": "/tmp/custom.png",
-    "width": 1920,
-    "height": 1080,
-    "dpi_scale": 1
-  }
-}
+```
+Please generate a screenshot of www.baidu.com, save it as JPEG format with 80% quality to /Users/ben/Downloads/screenshot.jpg
+```
+
+#### High-resolution Desktop Screenshot Prompt Reference
+
+```
+Please generate a high-resolution screenshot of www.github.com with dimensions 1920x1080, save it as PNG format to /Users/ben/Downloads/github-hd.png
+```
+
+#### Batch Screenshots Prompt Reference
+
+```
+Please generate screenshots for the following websites and save them to /Users/ben/Downloads/:
+1. www.google.com - full page, WebP format, filename: google-full.webp
+2. www.github.com - 1280x720 size, JPEG format 90% quality, filename: github.jpg
+3. www.stackoverflow.com - mobile view, PNG format, filename: stackoverflow-mobile.png
 ```
 
 ## Development

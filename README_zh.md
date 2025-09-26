@@ -119,71 +119,51 @@ playwright install chromium
 
 ### 使用示例
 
-#### 基本截图
+#### 网页完整长度截图（网页长截图）提示词参考
 
-```json
-{
-  "name": "webshot",
-  "arguments": {
-    "url": "https://example.com",
-    "output": "/tmp/screenshot.png"
-  }
-}
+```
+帮我生成 www.baidu.com 页面完整截图，保存成 webp 格式，保存到 /Users/ben/Downloads/screenshot-baidu-1.webp
 ```
 
-#### 全页面截图
+#### 指定网页截图尺寸提示词参考
 
-```json
-{
-  "name": "webshot", 
-  "arguments": {
-    "url": "https://example.com",
-    "output": "/tmp/fullpage.png",
-    "height": 0
-  }
-}
+```
+帮我生成 www.baidu.com 页面截图，尺寸 1280x720，保存成 webp 格式，保存到 /Users/ben/Downloads/screenshot-baidu-2.webp
 ```
 
-#### 移动设备截图
+#### 移动设备截图提示词参考
 
-```json
-{
-  "name": "webshot",
-  "arguments": {
-    "url": "https://example.com",
-    "output": "/tmp/mobile.png",
-    "device": "mobile"
-  }
-}
+*注意：手机和平板设备会根据模拟的设备尺寸生成，忽略自定义尺寸参数*
+
+```
+帮我生成 www.baidu.com 手机版截图，保存成 webp 格式，保存到 /Users/ben/Downloads/screenshot-mobile.webp
 ```
 
-#### 高质量 JPEG 截图
+#### 平板设备截图提示词参考
 
-```json
-{
-  "name": "webshot",
-  "arguments": {
-    "url": "https://example.com", 
-    "output": "/tmp/screenshot.jpg",
-    "format": "jpeg",
-    "quality": 90
-  }
-}
+```
+帮我生成 www.baidu.com 平板版截图，保存成 png 格式，保存到 /Users/ben/Downloads/screenshot-tablet.png
 ```
 
-#### 自定义尺寸截图
+#### 指定保存格式和压缩质量提示词参考
 
-```json
-{
-  "name": "webshot",
-  "arguments": {
-    "url": "https://example.com",
-    "output": "/tmp/custom.png",
-    "width": 1920,
-    "height": 1080,
-    "dpi_scale": 1
-  }
-}
+```
+帮我生成 www.baidu.com 截图，保存成 jpg 格式，压缩质量为 80，保存到 /Users/ben/Downloads/screenshot.jpg
+```
+
+#### 高分辨率桌面截图提示词参考
+
+```
+帮我生成 www.github.com 高分辨率截图，尺寸 1920x1080，保存成 png 格式，保存到 /Users/ben/Downloads/github-hd.png
+```
+
+#### 批量截图提示词参考
+
+```
+帮我为以下网站生成截图并保存到 /Users/ben/Downloads/：
+1. www.google.com - 完整页面，webp 格式，文件名：google-full.webp
+2. www.github.com - 1280x720 尺寸，jpg 格式 90% 质量，文件名：github.jpg
+3. www.stackoverflow.com - 手机版视图，png 格式，文件名：stackoverflow-mobile.png
 ```
 
 ## 开发
