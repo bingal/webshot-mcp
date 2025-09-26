@@ -630,7 +630,7 @@ async def _take_screenshot_attempt(
             await page.screenshot(**screenshot_options)
             
             # 通过 Pillow 处理最终输出：格式转换、质量压缩、尺寸调整
-            # 使用实际的设备尺寸，避免手机/平板截图变形
+            # 区分桌面和移动设备的处理方式
             await _process_final_image(
                 temp_png_path, 
                 output_path, 
@@ -638,7 +638,8 @@ async def _take_screenshot_attempt(
                 actual_height, 
                 actual_dpi_scale, 
                 format, 
-                quality
+                quality,
+                device  # 传递设备类型用于区分处理逻辑
             )
             
             # 删除临时 PNG 文件
@@ -663,36 +664,46 @@ async def _process_final_image(
     target_height: int,
     dpi_scale: float,
     format: str,
-    quality: int
+    quality: int,
+    device: str
 ):
     """统一处理最终图片：格式转换、质量压缩、尺寸调整"""
     
     def process_sync():
         with Image.open(source_png_path) as img:
             # 1. 处理 DPI 缩放和尺寸调整
-            # 对于手机和平板设备（dpi_scale > 1），保持高分辨率图片（浏览器尺寸 × DPI）
-            # 对于桌面设备（dpi_scale = 1 或用户自定义），按需调整尺寸
+            # 桌面设备：按用户指定尺寸，不考虑 DPI 缩放
+            # 手机/平板设备：按设备尺寸 × DPI 来生成高分辨率图片
             current_width, current_height = img.size
             
             # 如果是全页面截图（target_height == 0），处理宽度缩放
             if target_height == 0:
-                # 全页面截图：计算期望的最终宽度
-                expected_width = int(target_width * dpi_scale)
+                if device == "desktop":
+                    # 桌面设备：按用户指定宽度，不考虑 DPI
+                    expected_width = target_width
+                else:
+                    # 手机/平板设备：按设备宽度 × DPI
+                    expected_width = int(target_width * dpi_scale)
                 
                 # 如果当前宽度与期望宽度不匹配，进行调整
                 if current_width != expected_width:
                     new_height = int(current_height * (expected_width / current_width))
                     img = img.resize((expected_width, new_height), Image.Resampling.LANCZOS)
-                    logger.info(f"全页面截图尺寸调整: {current_width}x{current_height} -> {expected_width}x{new_height}")
+                    logger.info(f"全页面截图尺寸调整 ({device}): {current_width}x{current_height} -> {expected_width}x{new_height}")
             else:
-                # 固定尺寸截图：计算期望的最终尺寸（浏览器尺寸 × DPI）
-                expected_width = int(target_width * dpi_scale)
-                expected_height = int(target_height * dpi_scale)
+                if device == "desktop":
+                    # 桌面设备：按用户指定尺寸，不考虑 DPI
+                    expected_width = target_width
+                    expected_height = target_height
+                else:
+                    # 手机/平板设备：按设备尺寸 × DPI
+                    expected_width = int(target_width * dpi_scale)
+                    expected_height = int(target_height * dpi_scale)
                 
                 # 如果当前尺寸与期望尺寸不匹配，进行调整
                 if current_width != expected_width or current_height != expected_height:
                     img = img.resize((expected_width, expected_height), Image.Resampling.LANCZOS)
-                    logger.info(f"固定尺寸截图调整: {current_width}x{current_height} -> {expected_width}x{expected_height}")
+                    logger.info(f"固定尺寸截图调整 ({device}): {current_width}x{current_height} -> {expected_width}x{expected_height}")
             
             # 2. 格式转换和质量压缩
             save_options = {"optimize": True}

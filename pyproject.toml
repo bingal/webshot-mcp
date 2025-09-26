@@ -1,6 +1,6 @@
 [project]
 name = "webshot-mcp"
-version = "0.1.5"
+version = "0.1.6"
 description = "A MCP server for generating web page screenshots using Playwright"
 readme = "README.md"
 license = { text = "MIT" }
