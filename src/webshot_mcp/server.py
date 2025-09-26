@@ -670,21 +670,29 @@ async def _process_final_image(
     def process_sync():
         with Image.open(source_png_path) as img:
             # 1. 处理 DPI 缩放和尺寸调整
-            # 由于 Playwright 使用了 dpi_scale，实际生成的图片尺寸是 target_width*dpi_scale x target_height*dpi_scale
-            # 我们需要将其调整回用户请求的尺寸
+            # 对于手机和平板设备（dpi_scale > 1），保持高分辨率图片（浏览器尺寸 × DPI）
+            # 对于桌面设备（dpi_scale = 1 或用户自定义），按需调整尺寸
             current_width, current_height = img.size
             
-            # 如果是全页面截图（target_height == 0），保持原始宽度比例
+            # 如果是全页面截图（target_height == 0），处理宽度缩放
             if target_height == 0:
-                # 全页面截图：只调整宽度，高度按比例缩放
-                if dpi_scale != 1:
-                    new_width = target_width
-                    new_height = int(current_height * (target_width / current_width))
-                    img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                # 全页面截图：计算期望的最终宽度
+                expected_width = int(target_width * dpi_scale)
+                
+                # 如果当前宽度与期望宽度不匹配，进行调整
+                if current_width != expected_width:
+                    new_height = int(current_height * (expected_width / current_width))
+                    img = img.resize((expected_width, new_height), Image.Resampling.LANCZOS)
+                    logger.info(f"全页面截图尺寸调整: {current_width}x{current_height} -> {expected_width}x{new_height}")
             else:
-                # 固定尺寸截图：调整到精确的目标尺寸
-                if current_width != target_width or current_height != target_height:
-                    img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+                # 固定尺寸截图：计算期望的最终尺寸（浏览器尺寸 × DPI）
+                expected_width = int(target_width * dpi_scale)
+                expected_height = int(target_height * dpi_scale)
+                
+                # 如果当前尺寸与期望尺寸不匹配，进行调整
+                if current_width != expected_width or current_height != expected_height:
+                    img = img.resize((expected_width, expected_height), Image.Resampling.LANCZOS)
+                    logger.info(f"固定尺寸截图调整: {current_width}x{current_height} -> {expected_width}x{expected_height}")
             
             # 2. 格式转换和质量压缩
             save_options = {"optimize": True}
