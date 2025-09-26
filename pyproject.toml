@@ -1,0 +1,47 @@
+[project]
+name = "webshot-mcp"
+version = "0.1.0"
+description = "A MCP server for generating web page screenshots using Playwright"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "bingal", email = "bingalsky@gmail.com" }
+]
+keywords = ["mcp", "screenshot", "playwright", "web", "automation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+    "Topic :: Multimedia :: Graphics :: Capture :: Screen Capture",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=1.15.0",
+    "playwright>=1.55.0",
+    "pillow>=10.0.0",
+]
+
+[project.scripts]
+webshot-mcp = "webshot_mcp.server:run_server"
+
+
+[project.urls]
+Repository = "https://github.com/bingal/webshot-mcp"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[[tool.uv.index]]
+url = "https://mirrors.aliyun.com/pypi/simple"
+default = true
