@@ -266,7 +266,17 @@ async def _resize_image(
 def run_server():
     """运行服务器"""
     import mcp.server.stdio
-    mcp.server.stdio.run_server(server)
+    import asyncio
+    
+    async def main():
+        async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+            await server.run(
+                read_stream,
+                write_stream,
+                server.create_initialization_options()
+            )
+    
+    asyncio.run(main())
 
 if __name__ == "__main__":
     run_server()

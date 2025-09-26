@@ -34,7 +34,38 @@ uv run playwright install chromium
 
 ### 作为 MCP 服务器
 
-在你的 MCP 客户端配置中添加：
+#### 方式 1：使用 pip 安装后运行（推荐）
+
+```bash
+pip install webshot-mcp
+```
+
+然后在 MCP 客户端配置中添加：
+
+```json
+{
+  "mcpServers": {
+    "webshot": {
+      "command": "webshot-mcp"
+    }
+  }
+}
+```
+
+#### 方式 2：使用 uvx 直接运行（无需安装）
+
+```json
+{
+  "mcpServers": {
+    "webshot": {
+      "command": "uvx",
+      "args": ["webshot-mcp"]
+    }
+  }
+}
+```
+
+#### 方式 3：开发模式（从源码运行）
 
 ```json
 {
