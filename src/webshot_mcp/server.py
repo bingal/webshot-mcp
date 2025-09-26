@@ -380,7 +380,7 @@ async def _create_browser(p):
 DEVICE_MAPPING = {
     "desktop": None,  # 使用自定义 viewport
     "mobile": "iPhone 13",  # 使用 Playwright 内置的 iPhone 13 配置
-    "tablet": "iPad Pro"    # 使用 Playwright 内置的 iPad Pro 配置
+    "tablet": "iPad Pro 11"    # 使用 Playwright 内置的 iPad Pro 11 配置
 }
 
 @server.list_tools()
@@ -514,14 +514,28 @@ async def _take_screenshot_attempt(
         browser, browser_type = await _create_browser(p)
         
         try:
-            # 创建页面或上下文
+            # 创建页面或上下文，并获取实际使用的尺寸
+            actual_width = width
+            actual_height = height
+            actual_dpi_scale = dpi_scale
+            
             if device != "desktop" and device in DEVICE_MAPPING:
                 device_name = DEVICE_MAPPING[device]
                 if device_name in p.devices:
                     # 使用 Playwright 内置设备配置
-                    context = await browser.new_context(**p.devices[device_name])
+                    device_config = p.devices[device_name]
+                    context = await browser.new_context(**device_config)
                     await _add_stealth_script(context)
                     page = await context.new_page()
+                    
+                    # 获取设备的实际尺寸，避免后续强制调整导致变形
+                    if 'viewport' in device_config:
+                        actual_width = device_config['viewport']['width']
+                        actual_height = device_config['viewport']['height'] if height != 0 else 0  # 保持全页面截图设置
+                    if 'device_scale_factor' in device_config:
+                        actual_dpi_scale = device_config['device_scale_factor']
+                    
+                    logger.info(f"使用设备 {device_name}，实际尺寸: {actual_width}x{actual_height if actual_height > 0 else '全页面'}, DPI: {actual_dpi_scale}")
                 else:
                     # 回退到默认配置
                     context = await browser.new_context(
@@ -577,8 +591,8 @@ async def _take_screenshot_attempt(
                     # 滚动后重新获取页面高度
                     page_height = await page.evaluate('() => document.documentElement.scrollHeight')
                     logger.info(f"滚动后页面实际高度: {page_height}")
-                    # 设置视口大小以适应页面高度
-                    await page.set_viewport_size({"width": width, "height": page_height})
+                    # 设置视口大小以适应页面高度，使用实际的设备宽度
+                    await page.set_viewport_size({"width": actual_width, "height": page_height})
                     logger.info("视口大小调整完成")
                     
                     # 最后等待一次网络空闲
@@ -599,10 +613,12 @@ async def _take_screenshot_attempt(
             except Exception as e:
                 logger.warning(f"最终网络空闲超时，继续执行: {str(e)}")
             
-            # 截图选项
+            # 统一截图处理：Playwright 始终生成 PNG 格式
+            # 然后通过 Pillow 处理格式转换、质量压缩和尺寸调整
+            temp_png_path = output_path.with_suffix('.temp.png')
             screenshot_options = {
-                "path": str(output_path),
-                "type": format,
+                "path": str(temp_png_path),
+                "type": "png",
                 "timeout": 30000  # 截图超时
             }
             
@@ -610,16 +626,24 @@ async def _take_screenshot_attempt(
             if height == 0:
                 screenshot_options["full_page"] = True
             
-            # 设置质量（仅对 jpeg 和 webp 有效）
-            if format in ["jpeg", "webp"] and quality < 100:
-                screenshot_options["quality"] = quality
-            
-            # 执行截图
+            # 执行截图（始终生成 PNG）
             await page.screenshot(**screenshot_options)
             
-            # 如果需要调整尺寸（当 dpi_scale 不为 1 且文件存在时）
-            if dpi_scale != 1 and height != 0 and output_path.exists():
-                await _resize_image(output_path, width, height, format, quality)
+            # 通过 Pillow 处理最终输出：格式转换、质量压缩、尺寸调整
+            # 使用实际的设备尺寸，避免手机/平板截图变形
+            await _process_final_image(
+                temp_png_path, 
+                output_path, 
+                actual_width, 
+                actual_height, 
+                actual_dpi_scale, 
+                format, 
+                quality
+            )
+            
+            # 删除临时 PNG 文件
+            if temp_png_path.exists():
+                temp_png_path.unlink()
             
             return {
                 "status": "success",
@@ -632,38 +656,73 @@ async def _take_screenshot_attempt(
         finally:
             await browser.close()
 
-async def _resize_image(
-    image_path: Path, 
-    target_width: int, 
-    target_height: int, 
-    format: str, 
+async def _process_final_image(
+    source_png_path: Path,
+    output_path: Path,
+    target_width: int,
+    target_height: int,
+    dpi_scale: float,
+    format: str,
     quality: int
 ):
-    """使用 Pillow 调整图片尺寸和质量"""
+    """统一处理最终图片：格式转换、质量压缩、尺寸调整"""
     
-    # 在异步环境中运行同步的 Pillow 操作
-    def resize_sync():
-        with Image.open(image_path) as img:
-            # 调整尺寸
-            resized_img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+    def process_sync():
+        with Image.open(source_png_path) as img:
+            # 1. 处理 DPI 缩放和尺寸调整
+            # 由于 Playwright 使用了 dpi_scale，实际生成的图片尺寸是 target_width*dpi_scale x target_height*dpi_scale
+            # 我们需要将其调整回用户请求的尺寸
+            current_width, current_height = img.size
             
-            # 保存选项
-            save_options = {}
+            # 如果是全页面截图（target_height == 0），保持原始宽度比例
+            if target_height == 0:
+                # 全页面截图：只调整宽度，高度按比例缩放
+                if dpi_scale != 1:
+                    new_width = target_width
+                    new_height = int(current_height * (target_width / current_width))
+                    img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            else:
+                # 固定尺寸截图：调整到精确的目标尺寸
+                if current_width != target_width or current_height != target_height:
+                    img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+            
+            # 2. 格式转换和质量压缩
+            save_options = {"optimize": True}
+            
             if format == "jpeg":
-                save_options["quality"] = quality
-                save_options["optimize"] = True
+                # JPEG 格式：支持质量压缩
+                if quality < 100:
+                    save_options["quality"] = quality
+                # 如果原图有透明通道，需要转换为 RGB
+                if img.mode in ("RGBA", "LA", "P"):
+                    # 创建白色背景
+                    background = Image.new("RGB", img.size, (255, 255, 255))
+                    if img.mode == "P":
+                        img = img.convert("RGBA")
+                    background.paste(img, mask=img.split()[-1] if img.mode == "RGBA" else None)
+                    img = background
+                img.save(output_path, format="JPEG", **save_options)
+                
             elif format == "webp":
-                save_options["quality"] = quality
-                save_options["method"] = 6  # 最佳压缩
+                # WebP 格式：支持质量压缩
+                if quality < 100:
+                    save_options["quality"] = quality
+                    save_options["method"] = 6  # 最佳压缩方法
+                img.save(output_path, format="WEBP", **save_options)
+                
             elif format == "png":
-                save_options["optimize"] = True
-            
-            # 保存图片
-            resized_img.save(image_path, format=format.upper(), **save_options)
+                # PNG 格式：无损压缩，忽略 quality 参数
+                img.save(output_path, format="PNG", **save_options)
+                
+            else:
+                # 其他格式：尝试直接保存，忽略 quality 参数
+                img.save(output_path, format=format.upper(), **save_options)
     
     # 在线程池中运行同步操作
     loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, resize_sync)
+    await loop.run_in_executor(None, process_sync)
+
+
 
 def run_server():
     """运行服务器"""
