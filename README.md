@@ -2,24 +2,25 @@
 
 # webshot-mcp
 
-一个用于生成网页截图的 MCP (Model Context Protocol) 服务器，基于 Playwright 和 Pillow 实现。
+[中文文档](README_zh.md) | English
 
-## 功能特性
+A MCP (Model Context Protocol) server for generating web page screenshots, implemented with Playwright.
 
-- 🌐 支持任意网页截图
-- 📱 支持多种设备类型（桌面、手机、平板）
-- 🎨 支持多种图片格式（PNG、JPEG、WebP）
-- 📏 支持自定义尺寸和 DPI 缩放
-- 🖼️ 支持全页面截图
-- 🗜️ 支持图片质量压缩
-- ⚡ 异步处理，性能优异
+## Features
 
+- 🌐 Support for any web page screenshots
+- 📱 Support for multiple device types (desktop, mobile, tablet)
+- 🎨 Support for multiple image formats (PNG, JPEG, WebP)
+- 📏 Support for custom dimensions and DPI scaling
+- 🖼️ Support for full-page screenshots
+- 🗜️ Support for image quality compression
+- ⚡ Asynchronous processing for excellent performance
 
-## 使用方法
+## Usage
 
-### 作为 MCP 服务器
+### As MCP Server
 
-#### 方式 1：使用 uvx 直接运行（推荐）
+#### Method 1: Run directly with uvx (Recommended)
 
 ```json
 {
@@ -32,18 +33,46 @@
 }
 ```
 
+#### Method 2: Use with Claude Code
 
-#### 方式 2：使用 pip 安装后运行
+Claude Code can be configured to use this MCP server in two ways:
+
+**Option A: Using the CLI wizard**
+```bash
+claude mcp add
+```
+Then follow the prompts to add webshot-mcp.
+
+**Option B: Direct config file editing (Recommended)**
+
+Edit your Claude Code configuration file (`~/.claude.json`) and add:
+
+```json
+{
+  "mcpServers": {
+    "webshot": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["webshot-mcp"]
+    }
+  }
+}
+```
+
+After editing the config file, restart Claude Code to apply the changes.
+
+#### Method 3: Install with pip and run
 
 ```bash
-# 安装 webshot-mcp
+# Install webshot-mcp
 pip install webshot-mcp
-# 安装 chromium 浏览器
+# Install chromium browser
 playwright install chromium
 ```
 
-然后在 MCP 客户端配置中添加：
+Then add to your MCP client configuration:
 
+**For Claude Desktop (`claude_desktop_config.json`):**
 ```json
 {
   "mcpServers": {
@@ -54,34 +83,45 @@ playwright install chromium
 }
 ```
 
+**For Claude Code (`~/.claude.json`):**
+```json
+{
+  "mcpServers": {
+    "webshot": {
+      "type": "stdio",
+      "command": "webshot-mcp"
+    }
+  }
+}
+```
 
-### 工具参数
+### Tool Parameters
 
-`webshot` 工具支持以下参数：
+The `webshot` tool supports the following parameters:
 
-#### 必需参数
+#### Required Parameters
 
-- `url` (string): 要截图的网页 URL
-- `output` (string): 截图文件保存路径
+- `url` (string): URL of the web page to screenshot
+- `output` (string): Path to save the screenshot file
 
-#### 可选参数
+#### Optional Parameters
 
-- `width` (integer): 浏览器窗口宽度，默认 1280
-- `height` (integer): 浏览器窗口高度，默认 768。设置为 0 时进行全页面截图
-- `dpi_scale` (number): DPI 缩放比例，默认 2
-- `device` (string): 设备类型，可选值：
-  - `desktop` (默认): 桌面设备
-  - `mobile`: 移动设备 (iPhone 13)
-  - `tablet`: 平板设备 (iPad Pro)
-- `format` (string): 图片格式，可选值：
-  - `png` (默认): PNG 格式
-  - `jpeg`: JPEG 格式
-  - `webp`: WebP 格式
-- `quality` (integer): 图片质量 (0-100)，默认 100。仅对 JPEG 和 WebP 格式有效
+- `width` (integer): Browser window width, default 1280
+- `height` (integer): Browser window height, default 768. Set to 0 for full-page screenshot
+- `dpi_scale` (number): DPI scaling ratio, default 2
+- `device` (string): Device type, options:
+  - `desktop` (default): Desktop device
+  - `mobile`: Mobile device (iPhone 13)
+  - `tablet`: Tablet device (iPad Pro)
+- `format` (string): Image format, options:
+  - `png` (default): PNG format
+  - `jpeg`: JPEG format
+  - `webp`: WebP format
+- `quality` (integer): Image quality (0-100), default 100. Only effective for JPEG and WebP formats
 
-### 使用示例
+### Usage Examples
 
-#### 基本截图
+#### Basic Screenshot
 
 ```json
 {
@@ -93,7 +133,7 @@ playwright install chromium
 }
 ```
 
-#### 全页面截图
+#### Full-page Screenshot
 
 ```json
 {
@@ -106,7 +146,7 @@ playwright install chromium
 }
 ```
 
-#### 移动设备截图
+#### Mobile Device Screenshot
 
 ```json
 {
@@ -119,7 +159,7 @@ playwright install chromium
 }
 ```
 
-#### 高质量 JPEG 截图
+#### High-quality JPEG Screenshot
 
 ```json
 {
@@ -133,7 +173,7 @@ playwright install chromium
 }
 ```
 
-#### 自定义尺寸截图
+#### Custom Size Screenshot
 
 ```json
 {
@@ -148,63 +188,63 @@ playwright install chromium
 }
 ```
 
-## 开发
+## Development
 
-### 运行测试
+### Run Tests
 
 ```bash
 uv run pytest
 ```
 
-### 代码结构
+### Code Structure
 
 ```
 webshot-mcp/
 ├── src/webshot_mcp/
 │   ├── __init__.py
-│   ├── cli.py          # CLI 入口
-│   └── server.py       # MCP 服务器实现
+│   ├── cli.py          # CLI entry point
+│   └── server.py       # MCP server implementation
 ├── tests/
-│   └── test_server.py  # 测试用例
-├── pyproject.toml      # 项目配置
+│   └── test_server.py  # Test cases
+├── pyproject.toml      # Project configuration
 └── README.md
 ```
 
-### 技术栈
+### Tech Stack
 
-- **MCP**: Model Context Protocol 框架
-- **Playwright**: 浏览器自动化和截图
-- **Pillow**: 图片处理和压缩
-- **asyncio**: 异步编程支持
+- **MCP**: Model Context Protocol framework
+- **Playwright**: Browser automation and screenshots
+- **Pillow**: Image processing and compression
+- **asyncio**: Asynchronous programming support
 
-## 发布
+## Publishing
 
-### 构建和发布到 PyPI
+### Build and Publish to PyPI
 
 ```bash
-# 安装构建工具
+# Install build tools
 uv add --dev build twine
 
-# 构建包
+# Build package
 uv run python -m build
 
-# 发布到 PyPI
+# Publish to PyPI
 uv run twine upload dist/*
 ```
 
-## 许可证
+## License
 
 MIT License
 
-## 贡献
+## Contributing
 
-欢迎提交 Issue 和 Pull Request！
+Issues and Pull Requests are welcome!
 
-## 更新日志
+## Changelog
 
 ### v0.1.0
 
-- 初始版本
-- 支持基本网页截图功能
-- 支持多种设备类型和图片格式
-- 支持图片质量压缩和尺寸调整
+- Initial release
+- Support for basic web page screenshot functionality
+- Support for multiple device types and image formats
+- Support for image quality compression and size adjustment
