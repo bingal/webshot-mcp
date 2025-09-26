@@ -14,30 +14,32 @@
 - 🗜️ 支持图片质量压缩
 - ⚡ 异步处理，性能优异
 
-## 安装
-
-### 从源码安装
-
-```bash
-git clone <repository-url>
-cd webshot-mcp
-uv sync --extra dev
-```
-
-### 安装 Playwright 浏览器
-
-```bash
-uv run playwright install chromium
-```
 
 ## 使用方法
 
 ### 作为 MCP 服务器
 
-#### 方式 1：使用 pip 安装后运行（推荐）
+#### 方式 1：使用 uvx 直接运行（推荐）
+
+```json
+{
+  "mcpServers": {
+    "webshot": {
+      "command": "uvx",
+      "args": ["webshot-mcp"]
+    }
+  }
+}
+```
+
+
+#### 方式 2：使用 pip 安装后运行
 
 ```bash
+# 安装 webshot-mcp
 pip install webshot-mcp
+# 安装 chromium 浏览器
+playwright install chromium
 ```
 
 然后在 MCP 客户端配置中添加：
@@ -52,32 +54,6 @@ pip install webshot-mcp
 }
 ```
 
-#### 方式 2：使用 uvx 直接运行（无需安装）
-
-```json
-{
-  "mcpServers": {
-    "webshot": {
-      "command": "uvx",
-      "args": ["webshot-mcp"]
-    }
-  }
-}
-```
-
-#### 方式 3：开发模式（从源码运行）
-
-```json
-{
-  "mcpServers": {
-    "webshot": {
-      "command": "uv",
-      "args": ["run", "python", "-m", "webshot_mcp.server"],
-      "cwd": "/path/to/webshot-mcp"
-    }
-  }
-}
-```
 
 ### 工具参数
 
